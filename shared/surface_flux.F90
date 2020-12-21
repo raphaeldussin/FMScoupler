@@ -121,11 +121,13 @@ use       constants_mod, only: cp_air, hlv, stefan, rdgas, rvgas, grav, vonkarm
 use             mpp_mod, only: input_nml_file, FATAL, mpp_error
 
 implicit none
+#ifndef useF2PY
 private
 
 ! ==== public interface ======================================================
 public  surface_flux, surface_flux_init
 ! ==== end of public interface ===============================================
+#endif
 
 !> \brief For the calculation of fluxes on the exchange grids.
 !!
@@ -281,8 +283,13 @@ subroutine surface_flux_1d (                                           &
 
   t_surf1 = t_surf0 + del_temp
 
+#ifndef useF2PY
   call escomp ( t_surf0, e_sat  )  ! saturation vapor pressure
   call escomp ( t_surf1, e_sat1 )  ! perturbed  vapor pressure
+#else
+  call lookup_es ( t_surf0, e_sat  )
+  call lookup_es ( t_surf1, e_sat1 )
+#endif
 
   if(use_mixing_ratio) then
     ! surface mixing ratio at saturation
@@ -358,10 +365,12 @@ subroutine surface_flux_1d (                                           &
      endwhere
   endif
 
+#ifndef useF2PY
   !  monin-obukhov similarity theory
   call mo_drag (thv_atm, thv_surf, z_atm,                  &
        rough_mom, rough_heat, rough_moist, w_atm,          &
        cd_m, cd_t, cd_q, u_star, b_star, avail             )
+#endif
 
   ! override with ocean fluxes from NCAR calculation
   if (ncar_ocean_flux .or. ncar_ocean_flux_orig) then
